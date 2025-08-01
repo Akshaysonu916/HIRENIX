@@ -41,6 +41,8 @@ INSTALLED_APPS = [
 
     # my apps
     'myapp',
+    'widget_tweaks',  # for custom widgets in forms
+
 ]
 
 MIDDLEWARE = [
@@ -128,4 +130,4 @@ STATIC_URL = 'static/'
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 
-
+LOGIN_REDIRECT_URL = 'candidate/home/'

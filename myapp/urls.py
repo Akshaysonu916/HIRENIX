@@ -4,13 +4,20 @@ from django.contrib.auth import views as auth_views
 
 urlpatterns = [
 
-
     # Authentication URLs
-    path('signup/', views.candidate_signup, name='signup'),
     path('login/', views.login_view, name='login'),
-    path('logout/', views.logout_view, name='logout'),
+    path('logout/', views.logout_view, name='logout'),  # if you're using a custom logout view
+    path('signup/', views.choose_signup, name='choose_signup'),
+    path('signup/employee/', views.employee_signup, name='employee_signup'),
+    path('signup/company/', views.company_signup, name='company_signup'),
 
-    #home page for candidates
-    path('candidate/home/', views.candidate_home, name='candidate_home'),
+    # homepage and dashboard URLs
+    path('', views.candidate_home, name='candidate_home'),
+    path('hr-dashboard/', views.hr_dashboard, name='hr_dashboard'),
+    path('company-dashboard/', views.company_dashboard, name='company_dashboard'),
+
+    # hr adding form
+    path('add-hr/', views.add_hr_view, name='add_hr'),
+
 
 ]

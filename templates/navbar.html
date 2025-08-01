@@ -1,0 +1,66 @@
+<!-- dashboard_layout.html (Combined Navbar + Sidebar + Main Area) -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Dashboard | Hirenix</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<!-- Remove default margins/padding to avoid 'white line' issues -->
+<body class="bg-gray-900 text-white min-h-screen m-0 p-0">
+
+  <!-- Navbar -->
+  <nav class="bg-gray-900 border-b border-gray-800 px-6 py-4 flex items-center justify-between">
+    <!-- Brand -->
+    <div class="text-2xl font-bold text-blue-400 tracking-tight">Hirenix</div>
+    <!-- Desktop Profile/Logout -->
+    <div class="hidden md:flex items-center space-x-8">
+      <a href="#" class="text-white hover:text-blue-300 font-medium transition-colors">Profile</a>
+      <a href="{% url 'logout' %}" class="text-white hover:text-red-400 font-medium transition-colors">Logout</a>
+    </div>
+  </nav>
+
+  <!-- Page Content Layout -->
+  <div class="flex min-h-screen bg-gray-900">
+    <!-- Sidebar -->
+    <aside class="w-64 bg-gray-900 text-white flex flex-col justify-between border-r border-gray-800">
+      <nav class="px-4 py-6 space-y-2">
+        {% if request.user.is_authenticated %}
+          {% if request.user.is_company %}
+            <a href="{% url 'company_dashboard' %}" class="block py-2 px-4 rounded hover:bg-gray-700">Dashboard</a>
+            <a href="#" class="block py-2 px-4 rounded hover:bg-gray-700">Post Job</a>
+            <a href="#" class="block py-2 px-4 rounded hover:bg-gray-700">Manage Jobs</a>
+            <a href="#" class="block py-2 px-4 rounded hover:bg-gray-700">View Applicants</a>
+            <a href="#" class="block py-2 px-4 rounded hover:bg-gray-700">Resume Filter</a>
+            <a href="#" class="block py-2 px-4 rounded hover:bg-gray-700">Recruitment Levels</a>
+            <a href="{% url 'add_hr' %}" class="block py-2 px-4 rounded hover:bg-gray-700">Add HR</a>
+            <a href="#" class="block py-2 px-4 rounded hover:bg-gray-700">HR List</a>
+          {% elif request.user.is_hr %}
+            <a href="{% url 'hr_dashboard' %}" class="block py-2 px-4 rounded hover:bg-gray-700">Dashboard</a>
+            <a href="#" class="block py-2 px-4 rounded hover:bg-gray-700">Assigned Jobs</a>
+            <a href="#" class="block py-2 px-4 rounded hover:bg-gray-700">Scheduled Interviews</a>
+            <a href="#" class="block py-2 px-4 rounded hover:bg-gray-700">Feedback History</a>
+            <a href="#" class="block py-2 px-4 rounded hover:bg-gray-700">Interview Employees</a>
+            <a href="#" class="block py-2 px-4 rounded hover:bg-gray-700">Employee Profile</a>
+            {% elif request.user.is_employee %}
+            <a href="#" class="block py-2 px-4 rounded hover:bg-gray-700">Browse Jobs</a>
+            <a href="#" class="block py-2 px-4 rounded hover:bg-gray-700">My Applications</a>
+            <a href="#" class="block py-2 px-4 rounded hover:bg-gray-700">Take Quiz (L1)</a>
+            <a href="#" class="block py-2 px-4 rounded hover:bg-gray-700">Voice Interview (L2)</a>
+            <a href="#" class="block py-2 px-4 rounded hover:bg-gray-700">HR Interview (L3)</a>
+            <a href="#" class="block py-2 px-4 rounded hover:bg-gray-700">Upload Resume</a>
+          {% endif %}
+        {% endif %}
+      </nav>
+    </aside>
+
+    <!-- Main Content Area -->
+    <main class="flex-1 p-6 overflow-y-auto">
+      {% block content %}
+      <!-- Your main page content goes here -->
+      {% endblock %}
+    </main>
+  </div>
+</body>
+</html>
