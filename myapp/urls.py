@@ -20,4 +20,14 @@ urlpatterns = [
     path('add-hr/', views.add_hr_view, name='add_hr'),
 
 
+
+    # admin urls
+    path('admin-dashboard/', views.admin_dashboard, name='admin_dashboard'),
+
+
+    # profile URLs
+    path('profile/', views.profile_view, name='profile'),
+    path("profile/edit/", views.profile_edit, name="profile_edit"),
+
+
 ]

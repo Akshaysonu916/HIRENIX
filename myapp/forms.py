@@ -1,6 +1,6 @@
 from django import forms
 from django.contrib.auth.forms import UserCreationForm, AuthenticationForm
-from .models import CustomUser
+from .models import CustomUser,EmployeeProfile, CompanyProfile, HRProfile
 
 
 
@@ -39,3 +39,22 @@ class HRSignUpForm(UserCreationForm):
         if commit:
             user.save()
         return user
+    
+
+
+# profile forms
+
+class EmployeeProfileForm(forms.ModelForm):
+    class Meta:
+        model = EmployeeProfile
+        fields = ["profile_picture", "bio", "location", "birthdate"]
+
+class CompanyProfileForm(forms.ModelForm):
+    class Meta:
+        model = CompanyProfile
+        fields = ["logo", "company_name", "industry", "website", "about"]
+
+class HRProfileForm(forms.ModelForm):
+    class Meta:
+        model = HRProfile
+        fields = ["profile_picture", "bio", "hr_department"]

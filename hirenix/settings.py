@@ -40,7 +40,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
 
     # my apps
-    'myapp',
+    'myapp.apps.MyappConfig',
     'widget_tweaks',  # for custom widgets in forms
 
 ]
@@ -123,11 +123,14 @@ AUTH_USER_MODEL = 'myapp.CustomUser'
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
 
 STATIC_URL = 'static/'
+STATIC_ROOT = BASE_DIR / 'staticfiles'
+MEDIA_URL = '/images/'
+MEDIA_ROOT = BASE_DIR / 'images'
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-
+LOGIN_URL = '/login/'
 LOGIN_REDIRECT_URL = 'candidate/home/'

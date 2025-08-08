@@ -1,0 +1,33 @@
+{% extends "home.html" %}
+{% block content %}
+{% load static %}
+{% include "navbar.html" %}
+<div class="max-w-4xl mx-auto mt-10 p-6 bg-white shadow-lg rounded-xl border border-gray-200">
+    <div class="flex items-center space-x-6">
+        <img src="{% if request.user.hrprofile.profile_picture %}{{ request.user.hrprofile.profile_picture.url }}{% else %}{% static 'images/default-avatar.png' %}{% endif %}" 
+             alt="HR Profile"
+             class="w-28 h-28 rounded-full border-4 border-blue-200 shadow-md object-cover">
+        <div>
+            <h1 class="text-3xl font-bold text-gray-900">{{ user.get_full_name|default:user.username }}</h1>
+            <p class="text-gray-500">HR Manager</p>
+            <p class="mt-2 text-gray-700"><strong>Email:</strong> {{ user.email }}</p>
+        </div>
+    </div>
+
+    <hr class="my-6">
+
+    <div>
+        <h2 class="text-xl font-semibold text-blue-900 mb-4">HR Information</h2>
+        <p class="text-gray-700 leading-relaxed">
+            {{ user.hrprofile.bio|default:"No HR details available." }}
+        </p>
+    </div>
+
+    <div class="mt-6">
+        <a href="{% url 'profile_edit' %}" 
+           class="px-5 py-2 bg-blue-800 text-white rounded-lg shadow hover:bg-blue-900 transition">
+           Edit Profile
+        </a>
+    </div>
+</div>
+{% endblock %}

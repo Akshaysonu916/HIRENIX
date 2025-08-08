@@ -12,45 +12,42 @@
     }
   </style>
 </head>
-<body
-  class="min-h-screen bg-gray-900 text-white m-0 p-0"
-  style="
-    background-image: linear-gradient(rgba(17,24,39,0.8), rgba(17,24,39,0.8)), url('https://images.unsplash.com/photo-1504384308090-c894fdcc538d?auto=format&fit=crop&w=1950&q=80');
-    background-size: cover;
-    background-position: center;
-    background-repeat: no-repeat;
-  "
->
+<body class="min-h-screen bg-white text-gray-900 m-0 p-0">
+  
   <!-- Navbar include -->
-  {% extends 'navbar.html' %}
+  {% block content %}
+  {% include 'navbar.html' %}
 
   <!-- Main Dashboard Content -->
-  {% block content %}
-  <div class="flex flex-col justify-center items-center px-4 py-20 min-h-screen">
-    <h1 class="text-4xl font-semibold text-white mb-2 drop-shadow-lg text-center">
+  <div class="flex flex-col justify-center items-center px-4 py-20 min-h-screen bg-blue-50">
+    
+    <h1 class="text-4xl font-semibold text-blue-700 mb-2 drop-shadow-sm text-center">
       Welcome, {{ user.username }} 👋
     </h1>
-    <p class="text-lg text-gray-300 mb-8 drop-shadow text-center">
+    
+    <p class="text-lg text-gray-600 mb-8 text-center">
       You are logged in as a candidate.
     </p>
 
     <div class="max-w-3xl text-center mb-10 space-y-4">
-      <p class="text-base text-gray-200 leading-relaxed drop-shadow">
-        At <strong>Hirenix</strong>, we believe that a job is more than a position — it's a pathway to purpose.
+      <p class="text-base text-gray-700 leading-relaxed">
+        At <strong class="text-blue-600">Hirenix</strong>, we believe that a job is more than a position — it's a pathway to purpose.
         Our mission is to empower individuals by connecting them with opportunities that match their skills,
         aspirations, and dreams.
       </p>
-      <p class="text-base text-gray-200 leading-relaxed drop-shadow">
+      <p class="text-base text-gray-700 leading-relaxed">
         Employment provides not just income but identity, stability, and a sense of achievement.
         Our recruitment system helps candidates find meaningful roles that shape their future and impact the world.
       </p>
     </div>
 
     <div class="flex flex-wrap gap-4 justify-center">
-      <a href="#" class="bg-blue-500 hover:bg-blue-600 text-white font-semibold py-3 px-6 rounded-lg shadow-md transition duration-300">
+      <a href="#" 
+         class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-lg shadow-md transition duration-300">
         🔍 View Jobs
       </a>
-      <a href="#" class="bg-blue-500 hover:bg-blue-600 text-white font-semibold py-3 px-6 rounded-lg shadow-md transition duration-300">
+      <a href="#" 
+         class="bg-white border border-blue-600 text-blue-600 hover:bg-blue-50 font-semibold py-3 px-6 rounded-lg shadow-md transition duration-300">
         📄 My Applications
       </a>
     </div>

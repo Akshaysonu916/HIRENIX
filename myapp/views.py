@@ -26,7 +26,7 @@ def login_view(request):
             elif user.is_company:
                 return redirect('company_dashboard')
             elif user.is_superuser:
-                return redirect('/admin/')
+                return redirect('admin_dashboard')  # ✅ Admin dashboard
             else:
                 messages.warning(request, "User role not defined.")
                 return redirect('login')
@@ -124,3 +124,68 @@ def add_hr_view(request):
     else:
         form = HRSignUpForm()
     return render(request, 'add_hr.html', {'form': form})
+
+
+
+#==============================
+# ✅ admin VIEWS
+#==============================
+
+@login_required
+def admin_dashboard(request):
+    total_users = CustomUser.objects.count()
+    new_signups = CustomUser.objects.filter(date_joined__gte='2025-08-01').count()  # Example recent month/range
+    # Replace with your logic for sessions/logs.
+    active_sessions = 5  # Placeholder
+    recent_logs = [
+        {'timestamp': '2025-08-07 10:25', 'message': 'User JohnDoe logged in.'},
+        {'timestamp': '2025-08-07 09:05', 'message': 'Admin updated settings.'},
+    ]
+    context = {
+        'total_users': total_users,
+        'new_signups': new_signups,
+        'active_sessions': active_sessions,
+        'recent_logs': recent_logs,
+    }
+    return render(request, 'admin_dashboard.html', context)
+
+
+
+#==============================
+# ✅ profile VIEWS
+#==============================
+
+@login_required
+def profile_view(request):
+    profile = request.user.get_profile()
+    if request.user.is_employee:
+        template = "employee_profile.html"
+    elif request.user.is_company:
+        template = "company_profile.html"
+    elif request.user.is_hr:
+        template = "hr_profile.html"
+    else:
+        template = "generic_profile.html"
+    return render(request, template, {"profile": profile})
+
+@login_required
+def profile_edit(request):
+    profile = request.user.get_profile()
+    if request.user.is_employee:
+        FormClass = EmployeeProfileForm
+    elif request.user.is_company:
+        FormClass = CompanyProfileForm
+    elif request.user.is_hr:
+        FormClass = HRProfileForm
+    else:
+        return redirect("profile")
+
+    if request.method == "POST":
+        form = FormClass(request.POST, request.FILES, instance=profile)
+        if form.is_valid():
+            form.save()
+            return redirect("profile")
+    else:
+        form = FormClass(instance=profile)
+
+    return render(request, "edit_profile.html", {"form": form})
