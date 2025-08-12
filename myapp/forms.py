@@ -2,6 +2,7 @@ from django import forms
 from django.contrib.auth.forms import UserCreationForm, AuthenticationForm
 from .models import CustomUser,EmployeeProfile, CompanyProfile, HRProfile
 from django.contrib.auth import get_user_model
+from django.core.exceptions import ValidationError
 
 
 
@@ -45,11 +46,72 @@ class HRSignUpForm(UserCreationForm):
 
 # profile forms
 
+from django import forms
+from django.core.exceptions import ValidationError
+from django.contrib.auth import get_user_model
+from .models import EmployeeProfile, CompanyProfile, HRProfile
+
 User = get_user_model()
 
-class EmployeeProfileForm(forms.ModelForm):
-    email = forms.EmailField(required=True, help_text="Enter your email address")
 
+class BaseProfileForm(forms.ModelForm):
+    username = forms.CharField(
+        max_length=150,
+        required=True,
+        help_text="Your username",
+        widget=forms.TextInput(attrs={
+            "class": "w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400",
+            "placeholder": "Enter username"
+        })
+    )
+    email = forms.EmailField(
+        required=True,
+        help_text="Enter your email address",
+        widget=forms.EmailInput(attrs={
+            "class": "w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400",
+            "placeholder": "Enter email"
+        })
+    )
+
+    def __init__(self, *args, **kwargs):
+        self.user = kwargs.pop("user", None)
+        super().__init__(*args, **kwargs)
+
+        # Pre-fill username/email from user object
+        if self.user:
+            self.fields["username"].initial = self.user.username
+            self.fields["email"].initial = self.user.email
+
+        # Apply consistent styling to all fields
+        for field_name, field in self.fields.items():
+            if not isinstance(field.widget, (forms.CheckboxInput, forms.RadioSelect)):
+                existing_classes = field.widget.attrs.get("class", "")
+                field.widget.attrs["class"] = f"{existing_classes} w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400"
+
+    def clean_username(self):
+        username = self.cleaned_data["username"]
+        if User.objects.exclude(pk=self.user.pk).filter(username=username).exists():
+            raise ValidationError("This username is already taken.")
+        return username
+
+    def clean_email(self):
+        email = self.cleaned_data["email"]
+        if User.objects.exclude(pk=self.user.pk).filter(email=email).exists():
+            raise ValidationError("This email address is already in use.")
+        return email
+
+    def save(self, commit=True):
+        profile = super().save(commit=False)
+        if commit:
+            profile.save()
+            if self.user:
+                self.user.username = self.cleaned_data["username"]
+                self.user.email = self.cleaned_data["email"]
+                self.user.save()
+        return profile
+
+
+class EmployeeProfileForm(BaseProfileForm):
     class Meta:
         model = EmployeeProfile
         fields = [
@@ -62,39 +124,74 @@ class EmployeeProfileForm(forms.ModelForm):
             "education",
             "work_experience",
             "domain",
-            "email",  # <-- not actually in EmployeeProfile, handled separately
         ]
         widgets = {
-            "birthdate": forms.DateInput(attrs={"type": "date"}),
-            "bio": forms.Textarea(attrs={"rows": 3, "placeholder": "Write something about yourself..."}),
-            "skills": forms.TextInput(attrs={"placeholder": "e.g., Python, Django, React"}),
-            "education": forms.Textarea(attrs={"rows": 3, "placeholder": "Your educational background..."}),
-            "work_experience": forms.Textarea(attrs={"rows": 3, "placeholder": "Your work experience..."}),
-            "domain": forms.TextInput(attrs={"placeholder": "Your primary domain/specialization"}),
+            "birthdate": forms.DateInput(attrs={
+                "type": "date",
+                "class": "w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400"
+            }),
+            "bio": forms.Textarea(attrs={
+                "rows": 3,
+                "placeholder": "Write something about yourself...",
+                "class": "w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400"
+            }),
+            "skills": forms.TextInput(attrs={
+                "placeholder": "e.g., Python, Django, React",
+                "class": "w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400"
+            }),
+            "education": forms.Textarea(attrs={
+                "rows": 3,
+                "placeholder": "Your educational background...",
+                "class": "w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400"
+            }),
+            "work_experience": forms.Textarea(attrs={
+                "rows": 3,
+                "placeholder": "Your work experience...",
+                "class": "w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400"
+            }),
+            "domain": forms.TextInput(attrs={
+                "placeholder": "Your primary domain/specialization",
+                "class": "w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400"
+            }),
         }
 
-    def __init__(self, *args, **kwargs):
-        user = kwargs.pop('user', None)
-        super().__init__(*args, **kwargs)
-        if user:
-            self.fields['email'].initial = user.email
 
-    def save(self, commit=True):
-        profile = super().save(commit=False)
-        if commit:
-            profile.save()
-            # Save email to User model
-            user = profile.user
-            user.email = self.cleaned_data['email']
-            user.save()
-        return profile
-
-class CompanyProfileForm(forms.ModelForm):
+class CompanyProfileForm(BaseProfileForm):
     class Meta:
         model = CompanyProfile
-        fields = ["logo", "company_name", "industry", "website", "about"]
+        fields = [
+            "logo",
+            "company_name",
+            "industry",
+            "location",
+            "contact_number",
+            "website",
+            "about"
+        ]
+        widgets = {
+            "about": forms.Textarea(attrs={
+                "rows": 3,
+                "placeholder": "Tell us about your company...",
+                "class": "w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400"
+            }),
+        }
 
-class HRProfileForm(forms.ModelForm):
+
+class HRProfileForm(BaseProfileForm):
     class Meta:
         model = HRProfile
-        fields = ["profile_picture", "bio", "hr_department"]
+        fields = [
+            "profile_picture",
+            "bio",
+            "hr_department",
+            "company",
+            "business_contact_number",
+            "location",
+        ]
+        widgets = {
+            "bio": forms.Textarea(attrs={
+                "rows": 3,
+                "placeholder": "Write something about yourself...",
+                "class": "w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400"
+            }),
+        }

@@ -45,11 +45,26 @@ class CompanyProfile(models.Model):
     logo = models.ImageField(upload_to="company_logos/", null=True, blank=True)
     company_name = models.CharField(max_length=255)
     industry = models.CharField(max_length=255, blank=True, null=True)
+    location = models.CharField(max_length=255, blank=True, null=True)  # new
+    contact_number = models.CharField(max_length=20, blank=True, null=True)  # new
     website = models.URLField(blank=True, null=True)
     about = models.TextField(blank=True, null=True)
 
     def __str__(self):
         return f"Company Profile - {self.company_name}"
+
+    def total_jobs_posted(self):
+        return self.jobs.count()  # assumes Job model has ForeignKey to CompanyProfile
+
+    def active_jobs(self):
+        return self.jobs.filter(is_active=True)
+
+    def hr_members(self):
+        return self.user.hrprofile_set.all()  # assumes HRProfile has FK to company
+
+    def total_candidates_hired(self):
+        # adjust depending on your hiring model
+        return self.jobs.filter(status="hired").count()
 
 
 class HRProfile(models.Model):
@@ -57,6 +72,9 @@ class HRProfile(models.Model):
     profile_picture = models.ImageField(upload_to="hr_profiles/", null=True, blank=True)
     bio = models.TextField(blank=True, null=True)
     hr_department = models.CharField(max_length=255, blank=True, null=True)
+    company = models.ForeignKey('CompanyProfile', on_delete=models.SET_NULL, null=True, blank=True, related_name="hr_profiles")
+    business_contact_number = models.CharField(max_length=20, blank=True, null=True)
+    location = models.CharField(max_length=255, blank=True, null=True)
 
     def __str__(self):
         return f"HR Profile - {self.user.username}"

@@ -6,6 +6,8 @@ from django.contrib.auth import login, logout , authenticate
 from .forms import CustomLoginForm
 from django.contrib import messages
 from django.contrib.auth.forms import AuthenticationForm  
+from django.contrib.auth.decorators import login_required
+from django.utils import timezone
 
 
 
@@ -159,44 +161,99 @@ def admin_dashboard(request):
 def profile_view(request):
     profile = request.user.get_profile()
 
-    # Prepare skills list for template
+    # Prepare skills list (for employee profiles)
     skills_list = []
     if hasattr(profile, "skills") and profile.skills:
-        skills_list = [skill.strip() for skill in profile.skills.split(",") if skill.strip()]
+        skills_list = [
+            skill.strip() for skill in profile.skills.split(",") if skill.strip()
+        ]
 
+    # Base context
+    context = {
+        "profile": profile,
+        "skills_list": skills_list
+    }
+
+    # Employee profile
     if request.user.is_employee:
         template = "employee_profile.html"
+
+    # Company profile
     elif request.user.is_company:
         template = "company_profile.html"
+
+    # HR profile
     elif request.user.is_hr:
         template = "hr_profile.html"
+
+        # ===== Placeholder data until you add models =====
+        jobs = []                  # Replace with Job.objects.filter(hr=request.user)
+        candidates = []            # Replace with CandidateInterview.objects.filter(interviewer=request.user)
+        upcoming_interviews = []   # Replace with candidates.filter(date__gte=timezone.now())
+
+        stats = {
+            "total_hired": 0,       # Replace with candidates.filter(status="Hired").count()
+            "total_shortlisted": 0, # Replace with candidates.filter(status="Shortlisted").count()
+            "total_rejected": 0,    # Replace with candidates.filter(status="Rejected").count()
+        }
+        # ==================================================
+
+        # Add to context for HR template
+        context.update({
+            "jobs": jobs,
+            "candidates": candidates,
+            "upcoming_interviews": upcoming_interviews,
+            "stats": stats
+        })
+
+    # Fallback generic profile
     else:
         template = "generic_profile.html"
 
-    return render(request, template, {
-        "profile": profile,
-        "skills_list": skills_list
-    })
+    return render(request, template, context)
 
 @login_required
 def profile_edit(request):
+    """Edit profile for Employee, Company, or HR user."""
     profile = request.user.get_profile()
 
-    if request.user.is_employee:
-        FormClass = EmployeeProfileForm
-    elif request.user.is_company:
-        FormClass = CompanyProfileForm
-    elif request.user.is_hr:
-        FormClass = HRProfileForm
-    else:
+    # Select form class based on user type
+    form_map = {
+        "employee": EmployeeProfileForm,
+        "company": CompanyProfileForm,
+        "hr": HRProfileForm,
+    }
+    user_type = (
+        "employee" if request.user.is_employee else
+        "company" if request.user.is_company else
+        "hr" if request.user.is_hr else
+        None
+    )
+
+    if not user_type:
+        messages.error(request, "Invalid user type.")
         return redirect("profile")
 
+    FormClass = form_map[user_type]
+
     if request.method == "POST":
-        form = FormClass(request.POST, request.FILES, instance=profile, user=request.user)
+        form = FormClass(
+            request.POST, 
+            request.FILES, 
+            instance=profile, 
+            user=request.user
+        )
         if form.is_valid():
             form.save()
+            messages.success(request, "Profile updated successfully!")
             return redirect("profile")
+        else:
+            messages.error(request, "Please correct the errors below.")
     else:
         form = FormClass(instance=profile, user=request.user)
 
-    return render(request, "edit_profile.html", {"form": form})
+    context = {
+        "form": form,
+        "user_type": user_type,
+    }
+    return render(request, "edit_profile.html", context)
