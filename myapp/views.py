@@ -158,6 +158,12 @@ def admin_dashboard(request):
 @login_required
 def profile_view(request):
     profile = request.user.get_profile()
+
+    # Prepare skills list for template
+    skills_list = []
+    if hasattr(profile, "skills") and profile.skills:
+        skills_list = [skill.strip() for skill in profile.skills.split(",") if skill.strip()]
+
     if request.user.is_employee:
         template = "employee_profile.html"
     elif request.user.is_company:
@@ -166,11 +172,16 @@ def profile_view(request):
         template = "hr_profile.html"
     else:
         template = "generic_profile.html"
-    return render(request, template, {"profile": profile})
+
+    return render(request, template, {
+        "profile": profile,
+        "skills_list": skills_list
+    })
 
 @login_required
 def profile_edit(request):
     profile = request.user.get_profile()
+
     if request.user.is_employee:
         FormClass = EmployeeProfileForm
     elif request.user.is_company:
@@ -181,11 +192,11 @@ def profile_edit(request):
         return redirect("profile")
 
     if request.method == "POST":
-        form = FormClass(request.POST, request.FILES, instance=profile)
+        form = FormClass(request.POST, request.FILES, instance=profile, user=request.user)
         if form.is_valid():
             form.save()
             return redirect("profile")
     else:
-        form = FormClass(instance=profile)
+        form = FormClass(instance=profile, user=request.user)
 
     return render(request, "edit_profile.html", {"form": form})

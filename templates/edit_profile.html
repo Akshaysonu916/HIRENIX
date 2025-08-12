@@ -2,11 +2,79 @@
 {% block content %}
 {% load static %}
 {% include "navbar.html" %}
+
 <div class="max-w-xl mx-auto p-6 bg-white rounded-lg shadow-lg mt-8">
     <h1 class="text-2xl font-bold mb-4">Edit Profile</h1>
     <form method="post" enctype="multipart/form-data" class="space-y-4">
         {% csrf_token %}
-        {{ form.as_p }}
+
+        <!-- Email -->
+        <div>
+            <label class="block font-medium text-gray-700">Email</label>
+            {{ form.email }}
+            {% if form.email.errors %}
+                <p class="text-red-500 text-sm">{{ form.email.errors.0 }}</p>
+            {% endif %}
+        </div>
+
+        <!-- Profile Picture -->
+        <div>
+            <label class="block font-medium text-gray-700">Profile Picture</label>
+            {{ form.profile_picture }}
+            {% if form.profile_picture.errors %}
+                <p class="text-red-500 text-sm">{{ form.profile_picture.errors.0 }}</p>
+            {% endif %}
+        </div>
+
+        <!-- Bio -->
+        <div>
+            <label class="block font-medium text-gray-700">Bio</label>
+            {{ form.bio }}
+        </div>
+
+        <!-- Location -->
+        <div>
+            <label class="block font-medium text-gray-700">Location</label>
+            {{ form.location }}
+        </div>
+
+        <!-- Birthdate -->
+        <div>
+            <label class="block font-medium text-gray-700">Birthdate</label>
+            {{ form.birthdate }}
+        </div>
+
+        <!-- Resume -->
+        <div>
+            <label class="block font-medium text-gray-700">Resume</label>
+            {{ form.resume }}
+        </div>
+
+        <!-- Skills -->
+        <div>
+            <label class="block font-medium text-gray-700">Skills</label>
+            {{ form.skills }}
+        </div>
+
+        <!-- Education -->
+        <div>
+            <label class="block font-medium text-gray-700">Education</label>
+            {{ form.education }}
+        </div>
+
+        <!-- Work Experience -->
+        <div>
+            <label class="block font-medium text-gray-700">Work Experience</label>
+            {{ form.work_experience }}
+        </div>
+
+        <!-- Domain -->
+        <div>
+            <label class="block font-medium text-gray-700">Domain</label>
+            {{ form.domain }}
+        </div>
+
+        <!-- Submit Button -->
         <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">
             Save Changes
         </button>

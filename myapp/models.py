@@ -29,6 +29,12 @@ class EmployeeProfile(models.Model):
     bio = models.TextField(blank=True, null=True)
     location = models.CharField(max_length=255, blank=True, null=True)
     birthdate = models.DateField(blank=True, null=True)
+    resume = models.FileField(upload_to="resumes/", null=True, blank=True)
+    skills = models.CharField(max_length=255, blank=True, null=True)  # could store comma-separated tags
+    education = models.TextField(blank=True, null=True)  # or make a separate Education model
+    work_experience = models.TextField(blank=True, null=True)
+    domain = models.CharField(max_length=100, blank=True, null=True)  # e.g., Django, React, etc.
+    
 
     def __str__(self):
         return f"Employee Profile - {self.user.username}"
