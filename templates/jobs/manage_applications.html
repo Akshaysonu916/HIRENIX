@@ -1,0 +1,43 @@
+{% extends "home.html" %}
+{% block content %}
+{% include "navbar.html" %}
+
+<h2 class="text-2xl font-bold mb-4">All Applications for Your Jobs</h2>
+
+{% if applications %}
+<table class="w-full border-collapse border border-gray-300 shadow-md">
+    <thead class="bg-gray-100">
+        <tr>
+            <th class="border p-2">Job Title</th>
+            <th class="border p-2">Applicant Name</th>
+            <th class="border p-2">Email</th>
+            <th class="border p-2">Applied On</th>
+            <th class="border p-2">Resume</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for app in applications %}
+        <tr class="hover:bg-gray-50">
+            <td class="border p-2">{{ app.job.title }}</td>
+            <td class="border p-2">{{ app.applicant.get_full_name }}</td>
+            <td class="border p-2">{{ app.applicant.email }}</td>
+            <td class="border p-2">{{ app.applied_at|date:"M d, Y" }}</td>
+            <td class="border p-2 text-center">
+                {% if app.resume %}
+                    <a href="{{ app.resume.url }}" target="_blank"
+                       class="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded">
+                        View Resume
+                    </a>
+                {% else %}
+                    <span class="text-gray-500 italic">No resume uploaded</span>
+                {% endif %}
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% else %}
+<p class="text-gray-600">No applications received yet.</p>
+{% endif %}
+
+{% endblock %}

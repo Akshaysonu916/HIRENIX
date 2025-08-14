@@ -30,4 +30,17 @@ urlpatterns = [
     path("profile/edit/", views.profile_edit, name="profile_edit"),
 
 
+
+    # job URLs
+    path('jobs/', views.job_list, name='job_list'),
+    path('jobs/new/', views.job_create, name='job_create'),
+    path('jobs/<int:job_id>/edit/', views.job_edit, name='job_edit'),
+    path('jobs/<int:job_id>/delete/', views.job_delete, name='job_delete'),
+    path('browse-jobs/', views.browse_jobs, name='browse_jobs'),
+    path('jobs/<int:job_id>/', views.job_detail, name='job_detail'),
+
+    path("jobs/<int:job_id>/apply/", views.apply_for_job, name="apply_for_job"),
+    path("jobs/<int:job_id>/applicants/", views.view_applicants, name="view_applicants"),
+    path("company/applications/", views.manage_applications, name="manage_applications"),
+
 ]

@@ -1,4 +1,4 @@
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, get_object_or_404
 from .forms import *
 from django.contrib.auth.decorators import login_required
 from django.http import HttpResponseForbidden
@@ -8,7 +8,10 @@ from django.contrib import messages
 from django.contrib.auth.forms import AuthenticationForm  
 from django.contrib.auth.decorators import login_required
 from django.utils import timezone
-
+from django.core.paginator import Paginator
+from django.urls import reverse
+from django.views.decorators.http import require_POST
+from django.db.models import Count
 
 
 # login and logout views
@@ -103,9 +106,21 @@ def hr_dashboard(request):
 
 @login_required
 def company_dashboard(request):
-    if hasattr(request.user, 'is_company') and request.user.is_company:
-        return render(request, 'company_dashboard.html')
-    return HttpResponseForbidden("Access denied.")
+    # Allow only company users
+    if not getattr(request.user, 'is_company', False):
+        return HttpResponseForbidden("Access denied.")
+
+    # Fetch jobs posted by the logged-in company + application counts
+    jobs = (
+        Job.objects.filter(company=request.user)
+        .annotate(applicant_count=Count("applications"))  # 'applications' is related_name in JobApplication model
+        .order_by("-created_at")  # newest first
+    )
+
+    return render(request, "company_dashboard.html", {
+        "jobs": jobs,
+        "total_jobs": jobs.count()
+    })
 
 @login_required
 def candidate_home(request):
@@ -257,3 +272,153 @@ def profile_edit(request):
         "user_type": user_type,
     }
     return render(request, "edit_profile.html", context)
+
+
+
+#==============================
+# ✅ job VIEWS
+#==============================
+
+def is_company(user):
+    """Helper to check if the logged-in user is a company."""
+    return hasattr(user, 'companyprofile')  # Adjust if you have a profile model
+
+
+@login_required
+def job_list(request):
+    if not is_company(request.user):
+        messages.error(request, "You are not authorized to view job listings.")
+        return redirect("home")
+
+    job_qs = Job.objects.filter(company=request.user).order_by('-created_at')
+    paginator = Paginator(job_qs, 10)  # 10 jobs per page
+    page_number = request.GET.get('page')
+    jobs = paginator.get_page(page_number)
+
+    return render(request, "jobs/job_list.html", {"jobs": jobs})
+
+
+@login_required
+def job_create(request):
+    if not is_company(request.user):
+        messages.error(request, "Only company accounts can post jobs.")
+        return redirect("home")
+
+    if request.method == "POST":
+        form = JobForm(request.POST)
+        if form.is_valid():
+            job = form.save(commit=False)
+            job.company = request.user
+            job.save()
+            messages.success(request, "Job posted successfully!")
+            return redirect(reverse("job_list"))
+        else:
+            messages.error(request, "Please correct the errors below.")
+    else:
+        form = JobForm()
+
+    return render(request, "jobs/job_form.html", {"form": form, "title": "Post a New Job"})
+
+
+@login_required
+def job_edit(request, job_id):
+    job = get_object_or_404(Job, id=job_id, company=request.user)
+
+    if request.method == "POST":
+        form = JobForm(request.POST, instance=job)
+        if form.is_valid():
+            form.save()
+            messages.success(request, "Job updated successfully!")
+            return redirect(reverse("job_list"))
+        else:
+            messages.error(request, "Please correct the errors below.")
+    else:
+        form = JobForm(instance=job)
+
+    return render(request, "jobs/job_form.html", {"form": form, "title": "Edit Job"})
+
+
+@login_required
+def job_delete(request, job_id):
+    job = get_object_or_404(Job, id=job_id, company=request.user)
+    job.delete()
+    messages.success(request, "Job deleted successfully!")
+    return redirect(reverse("job_list"))
+
+
+@login_required
+def browse_jobs(request):
+    jobs = Job.objects.filter(is_active=True).order_by('-created_at')
+    return render(request, "jobs/browse_jobs.html", {"jobs": jobs})
+
+
+@login_required
+def job_detail(request, job_id):
+    job = get_object_or_404(Job, id=job_id, is_active=True)
+
+    # Check if the logged-in user has already applied
+    already_applied = JobApplication.objects.filter(
+        job=job,
+        applicant=request.user
+    ).exists()
+
+    return render(request, "jobs/job_detail.html", {
+        "job": job,
+        "already_applied": already_applied
+    })
+
+@login_required
+@require_POST
+def apply_for_job(request, job_id):
+    job = get_object_or_404(Job, id=job_id)
+
+    # Check if already applied
+    if JobApplication.objects.filter(job=job, applicant=request.user).exists():
+        messages.warning(request, "You have already applied for this job.")
+        return redirect("job_detail", job_id=job.id)
+
+    # Ensure employee profile exists
+    employee_profile = getattr(request.user, "employeeprofile", None)
+    if not employee_profile:
+        messages.error(request, "You must complete your profile before applying.")
+        return redirect("job_detail", job_id=job.id)
+
+    # Ensure resume exists
+    if not employee_profile.resume:
+        messages.error(request, "Please upload your resume in your profile before applying.")
+        return redirect("job_detail", job_id=job.id)
+
+    # Create application using the resume from profile
+    JobApplication.objects.create(
+        job=job,
+        applicant=request.user,
+        resume=employee_profile.resume
+    )
+
+    messages.success(request, "Your application has been submitted successfully!")
+    return redirect("job_detail", job_id=job.id)
+
+
+@login_required
+def view_applicants(request, job_id):
+    job = get_object_or_404(Job, id=job_id, company=request.user)
+    applicants = job.applications.select_related("applicant")
+    return render(request, "jobs/view_applicants.html", {
+        "job": job,
+        "applicants": applicants
+    })
+
+
+@login_required
+def manage_applications(request):
+    if not getattr(request.user, 'is_company', False):
+        return HttpResponseForbidden("Access denied.")
+
+    # Get only applications for jobs posted by this company
+    applications = JobApplication.objects.filter(
+        job__company=request.user
+    ).select_related("job", "applicant").order_by("-applied_at")
+
+    return render(request, "jobs/manage_applications.html", {
+        "applications": applications
+    })

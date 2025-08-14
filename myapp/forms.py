@@ -1,6 +1,6 @@
 from django import forms
 from django.contrib.auth.forms import UserCreationForm, AuthenticationForm
-from .models import CustomUser,EmployeeProfile, CompanyProfile, HRProfile
+from .models import CustomUser,EmployeeProfile, CompanyProfile, HRProfile,Job, JobApplication
 from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
 
@@ -194,4 +194,15 @@ class HRProfileForm(BaseProfileForm):
                 "placeholder": "Write something about yourself...",
                 "class": "w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400"
             }),
+        }
+
+
+
+# job forms
+class JobForm(forms.ModelForm):
+    class Meta:
+        model = Job
+        fields = ['title', 'description', 'location', 'salary', 'is_active']
+        widgets = {
+            'description': forms.Textarea(attrs={'rows': 4}),
         }

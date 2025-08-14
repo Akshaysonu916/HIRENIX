@@ -26,7 +26,7 @@
 
           {% elif request.user.is_employee %}
             <div class="flex space-x-6">
-              <a href="#" class="nav-link">Browse Jobs</a>
+              <a href="{% url 'browse_jobs' %}" class="nav-link">Browse Jobs</a>
               <a href="#" class="nav-link">My Applications</a>
               <a href="#" class="nav-link">Take Quiz (L1)</a>
               <a href="#" class="nav-link">Voice Interview (L2)</a>

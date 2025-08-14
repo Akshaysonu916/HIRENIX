@@ -1,5 +1,8 @@
 from django.contrib.auth.models import AbstractUser, Group, Permission
 from django.db import models
+from django.conf import settings
+from django.utils.text import slugify
+from django.utils import timezone
 
 class CustomUser(AbstractUser):
     is_company = models.BooleanField(default=False)
@@ -78,3 +81,68 @@ class HRProfile(models.Model):
 
     def __str__(self):
         return f"HR Profile - {self.user.username}"
+    
+
+
+# job models
+class Job(models.Model):
+    JOB_TYPE_CHOICES = [
+        ("full_time", "Full Time"),
+        ("part_time", "Part Time"),
+        ("internship", "Internship"),
+        ("contract", "Contract"),
+        ("remote", "Remote"),
+    ]
+
+    EXPERIENCE_LEVEL_CHOICES = [
+        ("entry", "Entry Level"),
+        ("mid", "Mid Level"),
+        ("senior", "Senior Level"),
+    ]
+
+    company = models.ForeignKey(
+        settings.AUTH_USER_MODEL, 
+        on_delete=models.CASCADE, 
+        related_name="jobs"
+    )
+    title = models.CharField(max_length=255)
+    slug = models.SlugField(unique=True, blank=True)  # for SEO-friendly URLs
+    description = models.TextField()
+    requirements = models.TextField(blank=True, null=True)
+    responsibilities = models.TextField(blank=True, null=True)
+    location = models.CharField(max_length=255)
+    is_remote = models.BooleanField(default=False)
+    job_type = models.CharField(max_length=20, choices=JOB_TYPE_CHOICES, default="full_time")
+    experience_level = models.CharField(max_length=20, choices=EXPERIENCE_LEVEL_CHOICES, default="entry")
+    salary = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+    application_deadline = models.DateField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    last_updated = models.DateTimeField(auto_now=True)
+    is_active = models.BooleanField(default=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+
+    def __str__(self):
+        return f"{self.title} at {self.company}"
+
+    def save(self, *args, **kwargs):
+        if not self.slug:
+            self.slug = slugify(f"{self.title}-{self.company.id}-{timezone.now().timestamp()}")
+        super().save(*args, **kwargs)
+
+    def is_open(self):
+        """Check if job is still open for applications."""
+        if self.application_deadline:
+            return self.is_active and self.application_deadline >= timezone.now().date()
+        return self.is_active
+    
+
+class JobApplication(models.Model):
+    job = models.ForeignKey('Job', on_delete=models.CASCADE, related_name="applications")
+    applicant = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    resume = models.FileField(upload_to="resumes/", null=True, blank=True)  # New field
+    applied_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.applicant.username} - {self.job.title}"
