@@ -210,6 +210,43 @@ def delete_user(request, user_id):
     return redirect("manage_users")
 
 
+@login_required
+@user_passes_test(is_admin)
+def admin_job_list(request):
+    q = request.GET.get('q', '').strip()
+    jobs = Job.objects.select_related('company').order_by('-created_at')
+
+    if q:
+        jobs = jobs.filter(title__icontains=q)
+
+    # If you’re using soft delete, hide inactive ones by default (toggle via query if needed)
+    show_inactive = request.GET.get('show_inactive') == '1'
+    if not show_inactive:
+        jobs = jobs.filter(is_active=True)
+
+    paginator = Paginator(jobs, 10)  # 10 per page
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+
+    return render(request, 'jobs/admin_job_list.html', {
+        'page_obj': page_obj,
+        'q': q,
+        'show_inactive': show_inactive,
+    })
+
+@login_required
+@user_passes_test(is_admin)
+@require_POST
+def admin_job_delete(request, pk):
+    job = get_object_or_404(Job, pk=pk)
+    job.delete()  # Permanently remove from the database
+    messages.success(request, 'Job permanently deleted.')
+
+    # Redirect back to the jobs list (keeping pagination & filters if any)
+    next_url = request.POST.get('next') or reverse('admin_manage_jobs')
+    return redirect(next_url)
+
+
 
 #==============================
 # ✅ profile VIEWS

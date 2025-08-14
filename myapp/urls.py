@@ -26,6 +26,8 @@ urlpatterns = [
     path('admin-dashboard/manage-users/', views.manage_users, name='manage_users'),
     path('admin-dashboard/user/<int:user_id>/', views.view_user_profile, name='view_user_profile'),
     path('admin-dashboard/user/<int:user_id>/delete/', views.delete_user, name='delete_user'),
+    path('admin-dashboard/jobs/', views.admin_job_list, name='admin_manage_jobs'),
+    path('admin-dashboard/jobs/<int:pk>/delete/', views.admin_job_delete, name='admin_job_delete'),
 
 
     # profile URLs
