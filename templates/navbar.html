@@ -33,7 +33,7 @@
               <a href="#" class="nav-link">HR Interview (L3)</a>
             </div>
           {% elif request.user.is_superuser %}
-            <a href="#" class="nav-link">Admin Dashboard</a>
+            <a href="{% url 'admin_dashboard' %}" class="nav-link">Admin Dashboard</a>
           {% endif %}
 
           <!-- Profile Dropdown -->

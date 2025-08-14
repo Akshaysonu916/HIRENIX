@@ -6,7 +6,7 @@ from django.contrib.auth import login, logout , authenticate
 from .forms import CustomLoginForm
 from django.contrib import messages
 from django.contrib.auth.forms import AuthenticationForm  
-from django.contrib.auth.decorators import login_required
+from django.contrib.auth.decorators import login_required, user_passes_test
 from django.utils import timezone
 from django.core.paginator import Paginator
 from django.urls import reverse
@@ -165,6 +165,49 @@ def admin_dashboard(request):
         'recent_logs': recent_logs,
     }
     return render(request, 'admin_dashboard.html', context)
+
+
+User = get_user_model()
+
+# Check if current user is admin
+def is_admin(user):
+    return user.is_superuser or user.is_staff
+
+@user_passes_test(is_admin)
+def manage_users(request):
+    user_type = request.GET.get("type")
+
+    # Start with all non-admins
+    users = User.objects.exclude(is_superuser=True)
+
+    # Apply filtering based on boolean fields
+    if user_type == "employee":
+        users = users.filter(is_employee=True)
+    elif user_type == "company":
+        users = users.filter(is_company=True)
+    elif user_type == "hr":
+        users = users.filter(is_hr=True)
+
+    return render(
+        request,
+        "manage_users.html",
+        {"users": users, "selected_type": user_type}
+    )
+
+@user_passes_test(is_admin)
+def view_user_profile(request, user_id):
+    user = get_object_or_404(CustomUser, id=user_id)
+    profile = user.get_profile()
+    return render(request, "view_user_profile.html", {"user": user, "profile": profile})
+
+
+@user_passes_test(is_admin)
+def delete_user(request, user_id):
+    user = get_object_or_404(User, id=user_id)
+    username = user.username
+    user.delete()
+    messages.success(request, f"User '{username}' deleted successfully.")
+    return redirect("manage_users")
 
 
 

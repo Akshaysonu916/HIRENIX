@@ -23,6 +23,9 @@ urlpatterns = [
 
     # admin urls
     path('admin-dashboard/', views.admin_dashboard, name='admin_dashboard'),
+    path('admin-dashboard/manage-users/', views.manage_users, name='manage_users'),
+    path('admin-dashboard/user/<int:user_id>/', views.view_user_profile, name='view_user_profile'),
+    path('admin-dashboard/user/<int:user_id>/delete/', views.delete_user, name='delete_user'),
 
 
     # profile URLs

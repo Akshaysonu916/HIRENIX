@@ -21,6 +21,15 @@ class CustomUser(AbstractUser):
         elif self.is_hr:
             return getattr(self, 'hrprofile', None)
         return None
+    
+    def get_user_type(self):
+        if self.is_company:
+            return "Company"
+        elif self.is_employee:
+            return "Employee"
+        elif self.is_hr:
+            return "HR"
+        return "Unknown"
 
     
 
