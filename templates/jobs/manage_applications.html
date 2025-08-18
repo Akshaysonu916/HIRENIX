@@ -2,42 +2,47 @@
 {% block content %}
 {% include "navbar.html" %}
 
-<h2 class="text-2xl font-bold mb-4">All Applications for Your Jobs</h2>
+<h2 class="text-2xl font-bold mb-4">Applications by Domain</h2>
 
-{% if applications %}
-<table class="w-full border-collapse border border-gray-300 shadow-md">
-    <thead class="bg-gray-100">
-        <tr>
-            <th class="border p-2">Job Title</th>
-            <th class="border p-2">Applicant Name</th>
-            <th class="border p-2">Email</th>
-            <th class="border p-2">Applied On</th>
-            <th class="border p-2">Resume</th>
-        </tr>
-    </thead>
-    <tbody>
-        {% for app in applications %}
-        <tr class="hover:bg-gray-50">
-            <td class="border p-2">{{ app.job.title }}</td>
-            <td class="border p-2">{{ app.applicant.get_full_name }}</td>
-            <td class="border p-2">{{ app.applicant.email }}</td>
-            <td class="border p-2">{{ app.applied_at|date:"M d, Y" }}</td>
-            <td class="border p-2 text-center">
-                {% if app.resume %}
-                    <a href="{{ app.resume.url }}" target="_blank"
-                       class="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded">
-                        View Resume
-                    </a>
-                {% else %}
-                    <span class="text-gray-500 italic">No resume uploaded</span>
-                {% endif %}
-            </td>
-        </tr>
-        {% endfor %}
-    </tbody>
-</table>
+{% if grouped_apps %}
+    {% for domain, apps in grouped_apps.items %}
+        <h3 class="text-xl font-semibold mt-6 mb-2 text-blue-700">
+            {{ domain|title }} Applications
+        </h3>
+        <table class="w-full border-collapse border border-gray-300 shadow-md mb-6">
+            <thead class="bg-gray-100">
+                <tr>
+                    <th class="border p-2">Job Title</th>
+                    <th class="border p-2">Applicant Name</th>
+                    <th class="border p-2">Email</th>
+                    <th class="border p-2">Applied On</th>
+                    <th class="border p-2">Resume</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for app in apps %}
+                <tr class="hover:bg-gray-50">
+                    <td class="border p-2">{{ app.job.title }}</td>
+                    <td class="border p-2">{{ app.applicant.full_name }}</td>
+                    <td class="border p-2">{{ app.applicant.email }}</td>
+                    <td class="border p-2">{{ app.applied_at|date:"M d, Y" }}</td>
+                    <td class="border p-2 text-center">
+                        {% if app.resume %}
+                            <a href="{{ app.resume.url }}" target="_blank"
+                               class="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded">
+                                View Resume
+                            </a>
+                        {% else %}
+                            <span class="text-gray-500 italic">No resume uploaded</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% endfor %}
 {% else %}
-<p class="text-gray-600">No applications received yet.</p>
+    <p class="text-gray-600">No applications received yet.</p>
 {% endif %}
 
 {% endblock %}

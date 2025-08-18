@@ -30,6 +30,13 @@ class CustomUser(AbstractUser):
         elif self.is_hr:
             return "HR"
         return "Unknown"
+    
+    @property
+    def full_name(self):
+        """Return full name if available, otherwise fallback to username."""
+        if self.first_name or self.last_name:
+            return f"{self.first_name} {self.last_name}".strip()
+        return self.username
 
     
 
@@ -109,6 +116,15 @@ class Job(models.Model):
         ("senior", "Senior Level"),
     ]
 
+    DOMAIN_CHOICES = [
+        ("django", "Django Developer"),
+        ("web", "Web Developer"),
+        ("app", "App Developer"),
+        ("ml", "Machine Learning"),
+        ("data", "Data Science"),
+        ("other", "Other"),
+    ]
+
     company = models.ForeignKey(
         settings.AUTH_USER_MODEL, 
         on_delete=models.CASCADE, 
@@ -123,6 +139,7 @@ class Job(models.Model):
     is_remote = models.BooleanField(default=False)
     job_type = models.CharField(max_length=20, choices=JOB_TYPE_CHOICES, default="full_time")
     experience_level = models.CharField(max_length=20, choices=EXPERIENCE_LEVEL_CHOICES, default="entry")
+    domain = models.CharField(max_length=50, choices=DOMAIN_CHOICES, default="other")
     salary = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
     application_deadline = models.DateField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)

@@ -3,7 +3,6 @@ from .forms import *
 from django.contrib.auth.decorators import login_required
 from django.http import HttpResponseForbidden
 from django.contrib.auth import login, logout , authenticate
-from .forms import CustomLoginForm
 from django.contrib import messages
 from django.contrib.auth.forms import AuthenticationForm  
 from django.contrib.auth.decorators import login_required, user_passes_test
@@ -12,6 +11,9 @@ from django.core.paginator import Paginator
 from django.urls import reverse
 from django.views.decorators.http import require_POST
 from django.db.models import Count
+from collections import defaultdict
+from django.db.models import Q
+from django.utils.timezone import now
 
 
 # login and logout views
@@ -410,7 +412,13 @@ def job_list(request):
         messages.error(request, "You are not authorized to view job listings.")
         return redirect("home")
 
+    # ✅ Step 1: Deactivate expired jobs before listing
+    deactivate_expired_jobs()
+
+    # ✅ Step 2: Get all jobs posted by this company
     job_qs = Job.objects.filter(company=request.user).order_by('-created_at')
+
+    # ✅ Step 3: Paginate results
     paginator = Paginator(job_qs, 10)  # 10 jobs per page
     page_number = request.GET.get('page')
     jobs = paginator.get_page(page_number)
@@ -466,11 +474,55 @@ def job_delete(request, job_id):
     return redirect(reverse("job_list"))
 
 
+def deactivate_expired_jobs():
+    """Mark expired jobs as inactive in the DB."""
+    today = timezone.now().date()
+    Job.objects.filter(
+        is_active=True,
+        application_deadline__lt=today
+    ).update(is_active=False)
+
 @login_required
 def browse_jobs(request):
-    jobs = Job.objects.filter(is_active=True).order_by('-created_at')
-    return render(request, "jobs/browse_jobs.html", {"jobs": jobs})
+    # ✅ Step 1: Deactivate expired jobs in DB
+    deactivate_expired_jobs()
 
+    today = timezone.now().date()
+
+    # ✅ Step 2: Get only active & not expired jobs
+    jobs = Job.objects.filter(
+        is_active=True
+    ).filter(
+        Q(application_deadline__isnull=True) | Q(application_deadline__gte=today)
+    ).order_by('-created_at')
+
+    # ✅ Get filter parameters from GET request
+    search_query = request.GET.get('q', '').strip()
+    job_type = request.GET.get('job_type', '')
+    experience_level = request.GET.get('experience_level', '')
+
+    # ✅ Apply search filter
+    if search_query:
+        jobs = jobs.filter(
+            Q(title__icontains=search_query) |
+            Q(description__icontains=search_query) |
+            Q(company__username__icontains=search_query)  # assuming company = CustomUser
+        )
+
+    # ✅ Apply job type filter
+    if job_type:
+        jobs = jobs.filter(job_type=job_type)
+
+    # ✅ Apply experience level filter
+    if experience_level:
+        jobs = jobs.filter(experience_level=experience_level)
+
+    return render(request, "jobs/browse_jobs.html", {
+        "jobs": jobs,
+        "search_query": search_query,
+        "selected_job_type": job_type,
+        "selected_experience": experience_level,
+    })
 
 @login_required
 def job_detail(request, job_id):
@@ -484,7 +536,8 @@ def job_detail(request, job_id):
 
     return render(request, "jobs/job_detail.html", {
         "job": job,
-        "already_applied": already_applied
+        "already_applied": already_applied,
+        "today": now().date(),
     })
 
 @login_required
@@ -534,15 +587,19 @@ def manage_applications(request):
     if not getattr(request.user, 'is_company', False):
         return HttpResponseForbidden("Access denied.")
 
-    # Get only applications for jobs posted by this company
+    # Get all applications for jobs posted by this company
     applications = JobApplication.objects.filter(
         job__company=request.user
     ).select_related("job", "applicant").order_by("-applied_at")
 
-    return render(request, "jobs/manage_applications.html", {
-        "applications": applications
-    })
+    # ✅ Group applications by job domain
+    grouped_apps = defaultdict(list)
+    for app in applications:
+        grouped_apps[app.job.domain].append(app)
 
+    return render(request, "jobs/manage_applications.html", {
+        "grouped_apps": dict(grouped_apps)  # pass grouped dictionary to template
+    })
 
 #==============================
 # ✅ Application VIEWS

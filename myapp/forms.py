@@ -206,7 +206,65 @@ class HRProfileForm(BaseProfileForm):
 class JobForm(forms.ModelForm):
     class Meta:
         model = Job
-        fields = ['title', 'description', 'location', 'salary', 'is_active']
+        fields = [
+            "title",
+            "description",
+            "requirements",
+            "responsibilities",
+            "location",
+            "is_remote",
+            "job_type",
+            "experience_level",
+            "domain",
+            "salary",
+            "application_deadline",
+            "is_active",
+        ]
         widgets = {
-            'description': forms.Textarea(attrs={'rows': 4}),
+            "title": forms.TextInput(attrs={
+                "class": "form-control",
+                "placeholder": "Enter job title"
+            }),
+            "description": forms.Textarea(attrs={
+                "class": "form-control",
+                "rows": 4,
+                "placeholder": "Describe the role"
+            }),
+            "requirements": forms.Textarea(attrs={
+                "class": "form-control",
+                "rows": 3,
+                "placeholder": "List job requirements"
+            }),
+            "responsibilities": forms.Textarea(attrs={
+                "class": "form-control",
+                "rows": 3,
+                "placeholder": "List key responsibilities"
+            }),
+            "location": forms.TextInput(attrs={
+                "class": "form-control",
+                "placeholder": "Enter job location"
+            }),
+            "is_remote": forms.CheckboxInput(attrs={
+                "class": "form-check-input"
+            }),
+            "job_type": forms.Select(attrs={
+                "class": "form-select"
+            }),
+            "experience_level": forms.Select(attrs={
+                "class": "form-select"
+            }),
+            "domain": forms.Select(attrs={
+                "class": "form-select"
+            }),
+            "salary": forms.NumberInput(attrs={
+                "class": "form-control",
+                "placeholder": "Enter salary (optional)"
+            }),
+            "application_deadline": forms.DateInput(attrs={
+                "class": "form-control",
+                "type": "date"
+            }),
+            "is_active": forms.CheckboxInput(attrs={
+                "class": "form-check-input"
+            }),
         }
