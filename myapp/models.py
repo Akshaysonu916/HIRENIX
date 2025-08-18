@@ -90,7 +90,7 @@ class HRProfile(models.Model):
 
     def __str__(self):
         return f"HR Profile - {self.user.username}"
-    
+ 
 
 
 # job models

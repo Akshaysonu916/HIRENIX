@@ -18,30 +18,48 @@ from django.db.models import Count
 
 def login_view(request):
     if request.method == 'POST':
-        form = AuthenticationForm(request=request, data=request.POST)  # ✅ MUST pass request
+        form = AuthenticationForm(request=request, data=request.POST)
         if form.is_valid():
-            user = form.get_user()  # ✅ Correct way to get the user
+            user = form.get_user()
             login(request, user)
 
             # ✅ Redirect based on role
-            if user.is_employee:
+            if getattr(user, 'is_employee', False):
                 return redirect('candidate_home')
-            elif user.is_hr:
+            elif getattr(user, 'is_hr', False):
                 return redirect('hr_dashboard')
-            elif user.is_company:
+            elif getattr(user, 'is_company', False):
                 return redirect('company_dashboard')
             elif user.is_superuser:
-                return redirect('admin_dashboard')  # ✅ Admin dashboard
+                return redirect('admin_dashboard')
             else:
-                messages.warning(request, "User role not defined.")
+                messages.warning(request, "User role not defined.", extra_tags="global")
                 return redirect('login')
         else:
-            messages.error(request, "Invalid credentials.")
-            print("Form errors:", form.errors)  # ✅ DEBUGGING
+            # Only login errors → tagged with "login"
+            messages.error(request, "Invalid username or password.", extra_tags="login")
+            print("Form errors:", form.errors)
     else:
         form = AuthenticationForm()
 
-    return render(request, 'login.html', {'form': form})
+    # --- ✅ Separate login errors from other messages ---
+    storage = messages.get_messages(request)  # consumes all queued messages
+    all_msgs = list(storage)
+
+    login_msgs = [
+        m for m in all_msgs
+        if ('login' in m.tags and m.level == messages.ERROR)
+    ]
+    keep_msgs = [m for m in all_msgs if m not in login_msgs]
+
+    # ✅ Re-add non-login messages so they appear later (not lost)
+    for m in keep_msgs:
+        messages.add_message(request, m.level, m.message, extra_tags=m.tags)
+
+    return render(request, 'login.html', {
+        'form': form,
+        'login_messages': login_msgs,  # 👈 only login errors
+    })
 
 def logout_view(request):
     logout(request)
@@ -129,19 +147,41 @@ def candidate_home(request):
 
 
 #==============================
-# ✅ HR ADDING VIEWS
+# ✅ HR VIEWS
 #==============================
 @login_required
 def add_hr_view(request):
     if request.method == 'POST':
         form = HRSignUpForm(request.POST)
         if form.is_valid():
-            form.save()
-            return redirect('company_dashboard')  # or a success page
+            # Save the HR user
+            user = form.save(commit=False)
+            user.is_hr = True
+            user.save()
+
+            # ✅ Create or update HRProfile and link to logged-in company
+            company = request.user.companyprofile
+            hr_profile, created = HRProfile.objects.get_or_create(user=user)
+            hr_profile.company = company
+            hr_profile.save()
+
+            return redirect('company_dashboard')  # success page
     else:
         form = HRSignUpForm()
+
     return render(request, 'add_hr.html', {'form': form})
 
+
+
+@login_required
+def hr_list(request):
+    if hasattr(request.user, "companyprofile"):  # use correct related name
+        company = request.user.companyprofile
+        hrs = HRProfile.objects.filter(company=company)
+    else:
+        hrs = HRProfile.objects.none()  # safer than []
+    
+    return render(request, "hr_list.html", {"hrs": hrs})
 
 
 #==============================
@@ -502,3 +542,12 @@ def manage_applications(request):
     return render(request, "jobs/manage_applications.html", {
         "applications": applications
     })
+
+
+#==============================
+# ✅ Application VIEWS
+#==============================
+@login_required
+def my_applications(request):
+    applications = JobApplication.objects.filter(applicant=request.user).select_related('job')
+    return render(request, "my_applications.html", {"applications": applications})

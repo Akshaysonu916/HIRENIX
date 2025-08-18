@@ -35,12 +35,16 @@ class HRSignUpForm(UserCreationForm):
         model = CustomUser
         fields = ['username', 'email', 'password1', 'password2']
 
-    def save(self, commit=True):
+    def save(self, commit=True, company=None):  
         user = super().save(commit=False)
         user.is_hr = True
         if commit:
             user.save()
+            if company:  
+                from .models import HRProfile  # avoid circular import
+                HRProfile.objects.create(user=user, company=company)
         return user
+
     
 
 

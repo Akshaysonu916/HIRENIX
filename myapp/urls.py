@@ -16,8 +16,9 @@ urlpatterns = [
     path('hr-dashboard/', views.hr_dashboard, name='hr_dashboard'),
     path('company-dashboard/', views.company_dashboard, name='company_dashboard'),
 
-    # hr adding form
+    # hr URLs
     path('add-hr/', views.add_hr_view, name='add_hr'),
+    path("hr-list/", views.hr_list, name="hr_list"),
 
 
 
@@ -47,5 +48,8 @@ urlpatterns = [
     path("jobs/<int:job_id>/apply/", views.apply_for_job, name="apply_for_job"),
     path("jobs/<int:job_id>/applicants/", views.view_applicants, name="view_applicants"),
     path("company/applications/", views.manage_applications, name="manage_applications"),
+
+    # application URLs
+    path("my-applications/", views.my_applications, name="my_applications"),
 
 ]
