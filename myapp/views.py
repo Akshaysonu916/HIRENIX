@@ -14,6 +14,8 @@ from django.db.models import Count
 from collections import defaultdict
 from django.db.models import Q
 from django.utils.timezone import now
+from myapp.utils.ranking import compute_resume_score
+from django.http import JsonResponse
 
 
 # login and logout views
@@ -561,14 +563,20 @@ def apply_for_job(request, job_id):
         messages.error(request, "Please upload your resume in your profile before applying.")
         return redirect("job_detail", job_id=job.id)
 
-    # Create application using the resume from profile
-    JobApplication.objects.create(
+    # ✅ Create the application
+    application = JobApplication.objects.create(
         job=job,
         applicant=request.user,
         resume=employee_profile.resume
     )
 
-    messages.success(request, "Your application has been submitted successfully!")
+    # ✅ Compute BERT match score against job description
+    if application.resume:
+        score = compute_resume_score(job.description, application.resume)
+        application.match_score = score
+        application.save()
+
+    messages.success(request, f"Your application has been submitted! Match Score: {application.match_score}%")
     return redirect("job_detail", job_id=job.id)
 
 
@@ -587,18 +595,44 @@ def manage_applications(request):
     if not getattr(request.user, 'is_company', False):
         return HttpResponseForbidden("Access denied.")
 
-    # Get all applications for jobs posted by this company
+    # ✅ Get all applications for jobs posted by this company
     applications = JobApplication.objects.filter(
         job__company=request.user
-    ).select_related("job", "applicant").order_by("-applied_at")
+    ).select_related("job", "applicant")
+
+    # ✅ Handle resume parsing (button click)
+    if request.method == "POST":
+        app_id = request.POST.get("application_id")
+        application = get_object_or_404(JobApplication, id=app_id)
+
+        if application.resume:
+            # Parse resume text
+            parsed_data = parse_resume(application.resume.path)
+
+            # Calculate match score (resume vs job requirements)
+            match_score = calculate_match_score(parsed_data, application.job)
+
+            # Save score to DB
+            application.match_score = match_score
+            application.save()
+
+        return redirect("manage_applications")
 
     # ✅ Group applications by job domain
     grouped_apps = defaultdict(list)
     for app in applications:
         grouped_apps[app.job.domain].append(app)
 
+    # ✅ Sort each group by match_score (higher = better)
+    for domain, apps in grouped_apps.items():
+        grouped_apps[domain] = sorted(
+            apps,
+            key=lambda x: x.match_score or 0,
+            reverse=True
+        )
+
     return render(request, "jobs/manage_applications.html", {
-        "grouped_apps": dict(grouped_apps)  # pass grouped dictionary to template
+        "grouped_apps": dict(grouped_apps)  # pass grouped & sorted apps
     })
 
 #==============================
@@ -608,3 +642,28 @@ def manage_applications(request):
 def my_applications(request):
     applications = JobApplication.objects.filter(applicant=request.user).select_related('job')
     return render(request, "my_applications.html", {"applications": applications})
+
+
+
+#==============================
+# ✅ Resume parsing VIEWS
+#==============================
+
+@login_required
+def parse_resumes(request, domain):
+    if not getattr(request.user, 'is_company', False):
+        return JsonResponse({"error": "Access denied."}, status=403)
+
+    # Get all applications for jobs in this domain
+    applications = JobApplication.objects.filter(
+        job__company=request.user,
+        job__domain=domain
+    )
+
+    # Dummy scoring logic (replace with actual parsing + scoring later)
+    for app in applications:
+        if app.resume:  
+            app.match_score = len(app.resume.name) * 2  # fake score for testing
+            app.save()
+
+    return redirect("manage_applications")  # after scoring, go back

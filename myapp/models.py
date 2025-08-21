@@ -169,6 +169,7 @@ class JobApplication(models.Model):
     applicant = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     resume = models.FileField(upload_to="resumes/", null=True, blank=True)  # New field
     applied_at = models.DateTimeField(auto_now_add=True)
+    match_score = models.FloatField(null=True, blank=True)
 
     def __str__(self):
         return f"{self.applicant.username} - {self.job.title}"

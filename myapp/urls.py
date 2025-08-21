@@ -51,5 +51,7 @@ urlpatterns = [
 
     # application URLs
     path("my-applications/", views.my_applications, name="my_applications"),
+    path("company/parse/<str:domain>/", views.parse_resumes, name="parse_resumes"),
+
 
 ]
