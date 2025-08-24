@@ -16,6 +16,7 @@ from django.db.models import Q
 from django.utils.timezone import now
 from myapp.utils.ranking import compute_resume_score
 from django.http import JsonResponse
+from django.contrib.auth import update_session_auth_hash
 
 
 # login and logout views
@@ -107,6 +108,26 @@ def company_signup(request):
 
     return render(request, 'registration/company_signup.html', {'form': form})
 
+
+
+
+#==============================
+# ✅ password VIEWS
+#==============================
+
+
+@login_required
+def change_password(request):
+    if request.method == 'POST':
+        form = PasswordChangeForm(request.user, request.POST)
+        if form.is_valid():
+            user = form.save()                      # sets new password & handles hashing
+            update_session_auth_hash(request, user) # keep user logged in
+            messages.success(request, 'Your password was successfully updated.')
+            return redirect('password_change_done')
+    else:
+        form = PasswordChangeForm(request.user)
+    return render(request, 'registration/change_password.html', {'form': form})
 
 # =============================
 # ✅ HOME / DASHBOARD VIEWS

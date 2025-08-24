@@ -3,6 +3,7 @@ from django.contrib.auth.forms import UserCreationForm, AuthenticationForm
 from .models import CustomUser,EmployeeProfile, CompanyProfile, HRProfile,Job, JobApplication
 from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
+from django.contrib.auth.forms import PasswordChangeForm
 
 
 
@@ -28,6 +29,37 @@ class CustomLoginForm(AuthenticationForm):
         'placeholder': 'Password',
     }))
 
+# password forms
+
+class CustomPasswordChangeForm(PasswordChangeForm):
+    old_password = forms.CharField(
+        label="Current Password",
+        strip=False,
+        widget=forms.PasswordInput(attrs={
+            "class": "w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500",
+            "placeholder": "Enter your current password"
+        }),
+    )
+
+    new_password1 = forms.CharField(
+        label="New Password",
+        strip=False,
+        widget=forms.PasswordInput(attrs={
+            "class": "w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500",
+            "placeholder": "Enter a new password"
+        }),
+        help_text="Your password must be strong and meet security requirements."
+    )
+
+    new_password2 = forms.CharField(
+        label="Confirm New Password",
+        strip=False,
+        widget=forms.PasswordInput(attrs={
+            "class": "w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500",
+            "placeholder": "Re-enter your new password"
+        }),
+    )
+
 
 # hr adding form
 class HRSignUpForm(UserCreationForm):
@@ -49,11 +81,6 @@ class HRSignUpForm(UserCreationForm):
 
 
 # profile forms
-
-from django import forms
-from django.core.exceptions import ValidationError
-from django.contrib.auth import get_user_model
-from .models import EmployeeProfile, CompanyProfile, HRProfile
 
 User = get_user_model()
 
